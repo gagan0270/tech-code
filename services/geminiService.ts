@@ -19,7 +19,12 @@ const SYSTEM_INSTRUCTION = `
   1. SOPHISTICATED LOADING: For any dynamic content, simulated data loading, or media assets, implement skeleton screens and shimmering placeholders. Perceived performance must be exceptional with smooth transitions from skeleton to content.
   2. DEEP PARALLAX: Implement pronounced parallax scrolling effects. Background decorative elements and hero images MUST move at a significantly slower pace than foreground content (text/cards), creating a clear and immersive sense of 3D depth. The background movement should be easily visible but smooth.
   3. ANIMATED HERO: The Hero section background MUST include a subtle, high-end animated effect. This could be a gentle CSS wave animation, a slow-drifting multi-point mesh gradient, or floating ethereal particles.
-  4. MOTION DESIGN: Use staggered entrance animations (e.g., slide-up-fade) for sections and cards. Ensure all buttons and interactive elements have polished hover and active states.
+  4. WORLD-CLASS HOVER INTERACTIONS: Apply polished hover effects to ALL interactive elements.
+     - Buttons: Subtle scaling (e.g., scale-105), brightness shifts, and glowing box-shadows.
+     - Cards: Lifting effects (translate-y), depth increases (larger shadows), and border-color transitions.
+     - Links: Animated underlines or text-color fades.
+     - Form Inputs: Focus/Hover states with soft ring glows or background-opacity shifts.
+  5. MOTION DESIGN: Use staggered entrance animations (e.g., slide-up-fade) for sections and cards. Ensure all interactions feel fluid and responsive.
 
   OUTPUT:
   - Return ONLY raw HTML code. Do NOT wrap in markdown backticks.

@@ -67,11 +67,20 @@ const App: React.FC = () => {
   const [editError, setEditError] = useState<string | null>(null);
   const [highlighting, setHighlighting] = useState(false);
 
+  const codeEditorRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight });
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  // Auto-scroll the code editor during generation
+  useEffect(() => {
+    if (state.isLoading && codeEditorRef.current && activeTab === 'code') {
+      codeEditorRef.current.scrollTop = codeEditorRef.current.scrollHeight;
+    }
+  }, [state.currentSite?.code, state.isLoading, activeTab]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,12 +95,17 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-    const estimate = await estimateGenerationTime(prompt);
-    setEstimatedTime(estimate.seconds);
-
+    
+    // 1. Initial State
+    setState(prev => ({ ...prev, isLoading: true, error: null, currentSite: { id: 'new', prompt, code: '', timestamp: Date.now() } }));
+    
+    // 2. Immediate transition to editor view
     setView('editor');
     setActiveTab('code'); 
+    
+    // 3. Estimate time
+    const estimate = await estimateGenerationTime(prompt);
+    setEstimatedTime(estimate.seconds);
 
     try {
       const media = mediaFile ? [mediaFile] : undefined;
@@ -103,8 +117,12 @@ const App: React.FC = () => {
       );
       setState(prev => ({ ...prev, isLoading: false }));
       triggerSuggestions(finalCode);
+      
+      // Keep it in editor but maybe shift to preview after a pause
+      setTimeout(() => setActiveTab('preview'), 2000);
     } catch (err: any) {
-      setState(prev => ({ ...prev, isLoading: false, error: err.message }));
+      setState(prev => ({ ...prev, isLoading: false, error: err.message, currentSite: null }));
+      setView('home');
     }
   };
 
@@ -170,7 +188,7 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col relative selection:bg-cyan-500/30">
       <UltraEtherealBackground mousePos={mousePos} />
       
-      {state.isLoading && view === 'home' && <LoadingOverlay estimatedSeconds={estimatedTime} />}
+      {state.isLoading && <LoadingOverlay estimatedSeconds={estimatedTime} currentCode={state.currentSite?.code} />}
 
       {view === 'home' ? (
         <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10 max-w-5xl mx-auto w-full text-center space-y-16">
@@ -281,6 +299,7 @@ const App: React.FC = () => {
               <div className={`flex-1 relative glass-panel rounded-[2.5rem] overflow-hidden shadow-2xl border-white/5 transition-all duration-700 hover:border-white/20 ${highlighting ? 'ring-4 ring-cyan-500/40 scale-[0.995]' : ''}`}>
                 {activeTab === 'code' ? (
                   <textarea 
+                    ref={codeEditorRef}
                     readOnly 
                     value={state.currentSite?.code} 
                     className="w-full h-full bg-[#020617]/40 p-12 text-cyan-300/80 code-font text-sm leading-relaxed resize-none focus:outline-none custom-scrollbar transition-all selection:bg-cyan-500/50" 
@@ -288,7 +307,10 @@ const App: React.FC = () => {
                 ) : (
                   <iframe srcDoc={state.currentSite?.code} className="w-full h-full border-none bg-white" title="Preview" />
                 )}
-                {state.isLoading && <LoadingOverlay estimatedSeconds={estimatedTime} />}
+                {/* Secondary loader for refinements/fixes */}
+                {(isEditing || isFixing) && <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center">
+                  <LoadingOverlay estimatedSeconds={estimatedTime} />
+                </div>}
               </div>
             </div>
 
