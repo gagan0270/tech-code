@@ -2,6 +2,8 @@
   "name": "TechCode",
   "description": "A high-performance AI website generator that crafts complete, responsive, and accessible full-stack applications from a single text prompt using Gemini 3 Pro.",
   "requestFramePermissions": [
-    "geolocation"
+    "geolocation",
+    "camera",
+    "microphone"
   ]
 }
