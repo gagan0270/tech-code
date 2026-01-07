@@ -15,6 +15,7 @@ const SYSTEM_INSTRUCTION = `
     * STATE MANAGEMENT: Implement a clean pattern for managing application state.
     * API SIMULATION: Use async/await and Promises to simulate network latency.
     * FORM HANDLING: Functional forms with real-time validation and error handling.
+      - SPECIAL FEATURE: If a contact form is generated, it MUST include a "Copy to Clipboard" button. This button should aggregate form data (name, email, message, etc.) into a formatted string and copy it to the user's clipboard using the navigator.clipboard API, providing immediate visual feedback (e.g., temporary button text change or toast notification).
 
   Accessibility & WCAG Compliance (MANDATORY):
   - SEMANTIC HTML: Use proper landmark elements (<header>, <nav>, <main>, <section>, <footer>, <article>).
@@ -65,7 +66,7 @@ export const generateWebsiteCodeStream = async (
 
   const stream = await ai.models.generateContentStream({
     model: "gemini-3-pro-preview",
-    contents: `${context}${SYSTEM_INSTRUCTION}\n\nProject Requirement: "Build an accessible, full-stack functional application for: ${prompt}"`,
+    contents: `${context}${SYSTEM_INSTRUCTION}\n\nProject Requirement: "Build an accessible, full-stack functional application with a 'Copy to Clipboard' feature in contact forms for: ${prompt}"`,
     config: {
       thinkingConfig: { thinkingBudget: 32768 },
       temperature: 0.8,
@@ -88,11 +89,11 @@ export const editWebsiteCode = async (currentCode: string, instructions: string)
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-lite-latest",
       contents: `
-        You are a Senior Full-Stack Engineer and Accessibility Specialist. Update this application code while maintaining WCAG compliance.
+        You are a Senior Full-Stack Engineer and Accessibility Specialist. Update this application code while maintaining WCAG compliance and clipboard features.
         Current Code: ${currentCode}
         Instructions: "${instructions}"
         
-        CRITICAL: Ensure semantic HTML, WAI-ARIA attributes, and keyboard navigation are enhanced. Return ONLY raw HTML.
+        CRITICAL: Ensure semantic HTML, WAI-ARIA attributes, keyboard navigation, and contact form 'Copy to Clipboard' logic are maintained or enhanced. Return ONLY raw HTML.
       `,
     });
     const text = response.text || "";

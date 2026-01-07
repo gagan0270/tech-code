@@ -97,6 +97,7 @@ const App: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editSuccess, setEditSuccess] = useState(false);
+  const [highlighting, setHighlighting] = useState(false);
   
   const [codeHistory, setCodeHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -196,7 +197,12 @@ const App: React.FC = () => {
       }));
       setEditPrompt("");
       setEditSuccess(true);
-      setTimeout(() => setEditSuccess(false), 3000);
+      setHighlighting(true);
+      
+      setTimeout(() => {
+        setEditSuccess(false);
+        setHighlighting(false);
+      }, 3000);
     } catch (err: any) {
       setEditError(err.message);
     } finally {
@@ -213,6 +219,8 @@ const App: React.FC = () => {
     newHistory.push(code);
     setCodeHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+    setHighlighting(true);
+    setTimeout(() => setHighlighting(false), 2000);
   };
 
   const undo = useCallback(() => {
@@ -224,6 +232,8 @@ const App: React.FC = () => {
         ...prev,
         currentSite: prev.currentSite ? { ...prev.currentSite, code } : null
       }));
+      setHighlighting(true);
+      setTimeout(() => setHighlighting(false), 1500);
     }
   }, [historyIndex, codeHistory]);
 
@@ -236,6 +246,8 @@ const App: React.FC = () => {
         ...prev,
         currentSite: prev.currentSite ? { ...prev.currentSite, code } : null
       }));
+      setHighlighting(true);
+      setTimeout(() => setHighlighting(false), 1500);
     }
   }, [historyIndex, codeHistory]);
 
@@ -295,6 +307,7 @@ const App: React.FC = () => {
           isEditing={isEditing || state.isLoading} 
           editError={editError || state.error}
           editSuccess={editSuccess}
+          highlighting={highlighting}
           undo={undo}
           redo={redo}
           canUndo={historyIndex > 0}
@@ -437,6 +450,7 @@ const EditorView: React.FC<{
   isEditing: boolean;
   editError: string | null;
   editSuccess: boolean;
+  highlighting: boolean;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -449,7 +463,7 @@ const EditorView: React.FC<{
 }> = ({ 
   site, onBack, previewMode, setPreviewMode, onDownload, onUpdateCode, 
   activeTab, setActiveTab, editPrompt, setEditPrompt, onEdit, isEditing, 
-  editError, editSuccess, undo, redo, canUndo, canRedo, editHistory, onRestore, theme, toggleTheme, isGenerating
+  editError, editSuccess, highlighting, undo, redo, canUndo, canRedo, editHistory, onRestore, theme, toggleTheme, isGenerating
 }) => {
   const codeEndRef = useRef<HTMLTextAreaElement>(null);
 
@@ -516,7 +530,7 @@ const EditorView: React.FC<{
                 onChange={(e) => !isGenerating && onUpdateCode(e.target.value)}
                 spellCheck={false}
                 readOnly={isGenerating}
-                className={`w-full h-full bg-slate-900/40 border border-white/5 rounded-3xl text-emerald-400 p-10 code-font focus:outline-none resize-none leading-relaxed shadow-2xl transition-opacity ${isGenerating ? 'opacity-80 cursor-wait' : 'opacity-100'}`}
+                className={`w-full h-full bg-slate-900/40 border border-white/5 rounded-3xl text-emerald-400 p-10 code-font focus:outline-none resize-none leading-relaxed shadow-2xl transition-all ${isGenerating ? 'opacity-80 cursor-wait' : 'opacity-100'} ${highlighting ? 'flash-highlight ring-2 ring-blue-500/50' : ''}`}
                 style={{ fontSize: '15px' }}
               />
               {isGenerating && (
@@ -563,7 +577,12 @@ const EditorView: React.FC<{
               className={`w-full h-44 bg-black/60 border border-white/10 rounded-[1.5rem] p-6 text-white text-base focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none transition-all placeholder-slate-700 shadow-inner leading-relaxed ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'opacity-100'}`}
             />
             {editError && <div className="text-[11px] font-black text-red-400 bg-red-400/5 p-4 rounded-2xl border border-red-400/10 uppercase tracking-widest">{editError}</div>}
-            {editSuccess && <div className="text-[11px] font-black text-emerald-400 bg-emerald-400/5 p-4 rounded-2xl border border-emerald-400/10 uppercase tracking-widest">Logic Updated</div>}
+            {editSuccess && (
+              <div className="flex items-center gap-3 text-[11px] font-black text-emerald-400 bg-emerald-400/10 p-4 rounded-2xl border border-emerald-400/20 uppercase tracking-widest animate-in fade-in slide-in-from-top-2 duration-300">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                Logic Layer Synced
+              </div>
+            )}
             <Button onClick={onEdit} isLoading={isEditing && !isGenerating} className="w-full font-black py-5 rounded-2xl shadow-2xl shadow-blue-500/20 text-xs tracking-widest uppercase" disabled={!editPrompt.trim() || isGenerating}>
               Re-Engineer App
             </Button>
