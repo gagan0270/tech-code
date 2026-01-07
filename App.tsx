@@ -15,43 +15,32 @@ import { LoadingOverlay } from './components/LoadingOverlay';
 import { Icons } from './constants';
 import JSZip from 'jszip';
 
-const InteractiveSpaceBackground: React.FC<{ mousePos: { x: number, y: number } }> = ({ mousePos }) => {
-  const layers = useMemo(() => [
-    { count: 120, speed: 30, size: 1.2, blur: 0, drift: '15s' },
-    { count: 60, speed: 60, size: 2.2, blur: 0.5, drift: '25s' },
-    { count: 25, speed: 120, size: 3.5, blur: 1.2, drift: '40s' }
-  ], []);
-
-  const starFields = useMemo(() => {
-    return layers.map(layer => 
-      Array.from({ length: layer.count }).map((_, i) => ({
-        id: `${layer.size}-${i}`,
-        top: Math.random() * 100,
-        left: Math.random() * 100,
-        opacity: Math.random() * 0.7 + 0.3,
-        size: Math.random() * layer.size + 0.5,
-        speed: layer.speed,
-        twinkle: Math.random() * 5 + 2
-      }))
-    );
-  }, [layers]);
-
+const UltraEtherealBackground: React.FC<{ mousePos: { x: number, y: number } }> = ({ mousePos }) => {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#020617]">
-      <div className="absolute inset-0 bg-gradient-to-tr from-blue-950/30 via-transparent to-indigo-950/20" />
-      {starFields.map((field, layerIdx) => (
-        <div key={layerIdx} className="absolute inset-0 star-layer" style={{ animationDuration: layers[layerIdx].drift }}>
-          {field.map(star => (
-            <div key={star.id} className="absolute bg-white rounded-full transition-transform duration-700 ease-out"
-              style={{
-                width: star.size, height: star.size, top: `${star.top}%`, left: `${star.left}%`,
-                opacity: star.opacity, transform: `translate(${(mousePos.x - 0.5) * star.speed}px, ${(mousePos.y - 0.5) * star.speed}px)`,
-                animation: `pulse ${star.twinkle}s infinite alternate`
-              }}
-            />
-          ))}
-        </div>
-      ))}
+      {/* Dynamic Nebulas */}
+      <div 
+        className="nebula bg-blue-600 top-[-10%] left-[-10%] animate-nebula-float" 
+        style={{ transform: `translate(${(mousePos.x - 0.5) * 50}px, ${(mousePos.y - 0.5) * 50}px)` }}
+      />
+      <div 
+        className="nebula bg-purple-600 bottom-[-10%] right-[-10%] animate-nebula-float" 
+        style={{ 
+          animationDelay: '-10s',
+          transform: `translate(${(mousePos.x - 0.5) * -40}px, ${(mousePos.y - 0.5) * -40}px)` 
+        }}
+      />
+      <div 
+        className="nebula bg-cyan-600 top-[30%] left-[40%] opacity-10 animate-pulse-slow" 
+        style={{ 
+          width: '600px', height: '600px',
+          transform: `translate(${(mousePos.x - 0.5) * 20}px, ${(mousePos.y - 0.5) * 20}px)` 
+        }}
+      />
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] contrast-150 brightness-150" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px]" />
     </div>
   );
 };
@@ -60,33 +49,23 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>({ currentSite: null, isLoading: false, isSearching: false, error: null });
   const [prompt, setPrompt] = useState("");
   const [useSearch, setUseSearch] = useState(false);
-  const [isFastMode, setIsFastMode] = useState(false);
   const [view, setView] = useState<'home' | 'editor'>('home');
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
   
-  // Media states
   const [mediaFile, setMediaFile] = useState<{ data: string; mimeType: string } | null>(null);
-  
-  // Chatbot states
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; parts: { text: string }[] }[]>([]);
   
-  // Intelligence States
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState(45);
-  const [complexity, setComplexity] = useState<'Low' | 'Medium' | 'High'>('Medium');
   
   const [editPrompt, setEditPrompt] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editSuccess, setEditSuccess] = useState(false);
   const [highlighting, setHighlighting] = useState(false);
-  const [codeHistory, setCodeHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight });
@@ -99,10 +78,7 @@ const App: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setMediaFile({
-          data: (reader.result as string).split(',')[1],
-          mimeType: file.type
-        });
+        setMediaFile({ data: (reader.result as string).split(',')[1], mimeType: file.type });
       };
       reader.readAsDataURL(file);
     }
@@ -110,17 +86,12 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    
-    // Step 1: Preliminary Analysis for Time Estimation
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     const estimate = await estimateGenerationTime(prompt);
     setEstimatedTime(estimate.seconds);
-    setComplexity(estimate.complexity);
 
-    // Step 2: Main Generation
     setView('editor');
     setActiveTab('code'); 
-    setState(prev => ({ ...prev, isSearching: useSearch }));
 
     try {
       const media = mediaFile ? [mediaFile] : undefined;
@@ -128,15 +99,12 @@ const App: React.FC = () => {
         prompt, 
         (chunk) => setState(prev => ({ ...prev, currentSite: { id: 'new', prompt, code: chunk, timestamp: Date.now() } })),
         useSearch, 
-        media,
-        (sources) => setState(prev => ({ ...prev, currentSite: prev.currentSite ? { ...prev.currentSite, sources } : null }))
+        media
       );
-      setState(prev => ({ ...prev, isLoading: false, isSearching: false }));
-      setCodeHistory([finalCode]);
-      setHistoryIndex(0);
+      setState(prev => ({ ...prev, isLoading: false }));
       triggerSuggestions(finalCode);
     } catch (err: any) {
-      setState(prev => ({ ...prev, isLoading: false, isSearching: false, error: err.message }));
+      setState(prev => ({ ...prev, isLoading: false, error: err.message }));
     }
   };
 
@@ -157,7 +125,7 @@ const App: React.FC = () => {
       setTimeout(() => setHighlighting(false), 2000);
       triggerSuggestions(fixedCode);
     } catch (err: any) {
-      setEditError("Auto-fix failed: " + err.message);
+      setEditError(err.message);
     } finally {
       setIsFixing(false);
     }
@@ -165,13 +133,12 @@ const App: React.FC = () => {
 
   const handleEdit = async () => {
     if (!editPrompt.trim() || !state.currentSite) return;
-    setIsEditing(true); setEditError(null); setEditSuccess(false);
-    
+    setIsEditing(true); setEditError(null);
     try {
       const newCode = await fastEditResponse(state.currentSite.code, editPrompt);
       setState(prev => ({ ...prev, currentSite: { ...prev.currentSite!, code: newCode } }));
-      setEditPrompt(""); setEditSuccess(true); setHighlighting(true);
-      setTimeout(() => { setEditSuccess(false); setHighlighting(false); }, 3000);
+      setEditPrompt(""); setHighlighting(true);
+      setTimeout(() => setHighlighting(false), 2000);
       triggerSuggestions(newCode);
     } catch (err: any) {
       setEditError(err.message);
@@ -195,186 +162,231 @@ const App: React.FC = () => {
     const content = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);
     const link = document.createElement("a");
-    link.href = url; link.download = `techcode-${state.currentSite.id}.zip`;
+    link.href = url; link.download = `techcode-${Date.now()}.zip`;
     link.click(); URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative selection:bg-blue-500/30 overflow-x-hidden">
-      <InteractiveSpaceBackground mousePos={mousePos} />
+    <div className="min-h-screen flex flex-col relative selection:bg-cyan-500/30">
+      <UltraEtherealBackground mousePos={mousePos} />
       
       {state.isLoading && view === 'home' && <LoadingOverlay estimatedSeconds={estimatedTime} />}
 
       {view === 'home' ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-10 max-w-4xl mx-auto w-full text-center space-y-12">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-black tracking-widest backdrop-blur-md uppercase">
-              <Icons.Magic /> Gemini 3 Engine
+        <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10 max-w-5xl mx-auto w-full text-center space-y-16">
+          <div className="space-y-8 animate-[fadeIn_1s_ease-out]">
+            <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full glass-panel text-cyan-400 text-[10px] font-extrabold tracking-[0.3em] uppercase hover:scale-110 hover:shadow-glow-cyan cursor-default">
+              <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse shadow-[0_0_10px_#06b6d4]" />
+              Gemini 3 Pro Engine
             </div>
-            <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white leading-[0.9]">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-indigo-500 italic text-shadow-glow">TechCode</span>
+            
+            <h1 className="text-8xl md:text-[10rem] font-black tracking-tighter text-white leading-[0.85] italic relative group">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-glow transition-all duration-700 hover:tracking-normal cursor-default block">
+                TechCode
+              </span>
+              <div className="absolute -top-12 -right-12 text-sm font-normal not-italic tracking-widest text-white/20 uppercase transition-all group-hover:text-cyan-500/40">v3.5 Intelligence</div>
             </h1>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto font-medium">
-              Multimodal Website Synthesis with <span className="text-white font-bold italic">Thinking Mode</span>.
+            
+            <p className="text-xl text-indigo-100/60 max-w-2xl mx-auto font-light leading-relaxed hover:text-white transition-colors cursor-default">
+              Synthesize high-performance full-stack prototypes using <span className="text-white font-semibold">Thinking Mode</span> and multi-modal synthesis.
             </p>
           </div>
 
-          <div className="relative w-full group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-[2.5rem] blur-2xl opacity-20 group-focus-within:opacity-50 transition duration-700"></div>
-            <div className="relative bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-4 shadow-3xl">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your vision or upload a sketch/video..."
-                className="w-full h-48 bg-transparent border-none text-white p-6 focus:ring-0 resize-none text-2xl placeholder-slate-600 font-medium"
-              />
-              <div className="flex flex-wrap items-center justify-between p-4 gap-6 border-t border-white/5">
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-blue-400 transition-colors">
-                    <Icons.Search /> <span className="text-xs font-black uppercase tracking-widest">Search Grounding</span>
-                    <input type="checkbox" checked={useSearch} onChange={() => setUseSearch(!useSearch)} className="hidden" />
-                    <div className={`w-8 h-4 rounded-full transition-colors ${useSearch ? 'bg-blue-600' : 'bg-slate-700'} relative`}>
-                      <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${useSearch ? 'translate-x-4' : ''}`} />
-                    </div>
-                  </label>
+          <div className="refractive-border w-full max-w-4xl group shadow-2xl hover:shadow-cyan-500/10">
+            <div className="refractive-inner p-2">
+              <div className="bg-slate-900/40 rounded-[1.3rem] overflow-hidden transition-all duration-500 group-hover:bg-slate-900/60">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe your vision... (e.g., A luxury watch e-commerce site with parallax scroll and dark glassmorphism)"
+                  className="w-full h-56 bg-transparent border-none text-white p-10 focus:ring-0 resize-none text-2xl placeholder-slate-700 font-medium leading-relaxed transition-all focus:placeholder-transparent"
+                />
+                
+                <div className="flex flex-wrap items-center justify-between p-6 gap-6 bg-black/40 border-t border-white/5 transition-colors group-hover:bg-black/60">
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-3 cursor-pointer group/toggle interactive-hover">
+                      <div className={`w-10 h-5 rounded-full transition-all duration-500 p-1 ${useSearch ? 'bg-cyan-500 shadow-[0_0_15px_#06b6d4]' : 'bg-slate-800'}`}>
+                        <div className={`w-3 h-3 bg-white rounded-full transition-transform duration-500 ${useSearch ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </div>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${useSearch ? 'text-cyan-400' : 'text-slate-500'} group-hover/toggle:text-white`}>
+                        Search Grounding
+                      </span>
+                      <input type="checkbox" className="hidden" checked={useSearch} onChange={() => setUseSearch(!useSearch)} />
+                    </label>
+                    
+                    <label className="flex items-center gap-3 cursor-pointer py-2 px-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all text-slate-400 hover:text-white hover:border-cyan-500/30 group/file">
+                      <div className="group-hover/file:rotate-12 transition-transform"><Icons.Desktop /></div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">{mediaFile ? 'Media Attached' : 'Attach Assets'}</span>
+                      <input type="file" className="hidden" onChange={handleFileUpload} accept="image/*,video/*" />
+                    </label>
+                  </div>
                   
-                  <label className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300">
-                    <Icons.Desktop /> <span className="text-xs font-black uppercase tracking-widest">{mediaFile ? 'File Added' : 'Add Media'}</span>
-                    <input type="file" onChange={handleFileUpload} accept="image/*,video/*" className="hidden" />
-                  </label>
+                  <Button 
+                    onClick={handleGenerate} 
+                    className="px-12 py-5 text-xl font-black uppercase tracking-widest italic hover:scale-105 active:scale-95"
+                  >
+                    Synthesize
+                  </Button>
                 </div>
-                <Button onClick={handleGenerate} className="px-12 py-5 rounded-2xl text-xl font-black uppercase bg-gradient-to-r from-blue-600 to-indigo-600 shadow-xl shadow-blue-500/20">
-                  Synthesize
-                </Button>
               </div>
             </div>
           </div>
-          {state.error && <div className="text-red-400 font-black uppercase text-xs tracking-[0.2em] bg-red-400/10 p-4 rounded-2xl border border-red-400/20">{state.error}</div>}
-        </div>
+
+          {state.error && (
+            <div className="animate-bounce bg-red-500/10 border border-red-500/20 text-red-400 px-6 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-red-500/20 transition-colors">
+              {state.error}
+            </div>
+          )}
+        </main>
       ) : (
-        <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10 bg-slate-950">
-          <nav className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between px-8 shrink-0">
-            <div className="flex items-center gap-6">
-              <Button onClick={() => setView('home')} variant="ghost" className="p-3 bg-white/5 rounded-2xl text-white"><Icons.ChevronLeft /></Button>
-              <h2 className="text-white font-black tracking-tight text-xl uppercase italic">Pro Studio</h2>
+        <div className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
+          <header className="h-20 glass-panel flex items-center justify-between px-10 shrink-0 border-b border-white/5 z-20">
+            <div className="flex items-center gap-8 group">
+              <button onClick={() => setView('home')} className="p-3 bg-white/5 hover:bg-white/15 rounded-2xl text-white transition-all hover:scale-110 active:scale-90">
+                <Icons.ChevronLeft />
+              </button>
+              <div className="flex flex-col group-hover:translate-x-1 transition-transform">
+                <h2 className="text-white font-black tracking-tighter text-2xl uppercase italic italic-gradient hover-text-glow cursor-default">Pro Studio</h2>
+                <span className="text-[10px] font-bold text-cyan-500 tracking-[0.4em] uppercase animate-pulse">Session Active</span>
+              </div>
             </div>
+            
             <div className="flex items-center gap-4">
-              <Button 
-                onClick={handleAutoFix} 
-                isLoading={isFixing}
-                variant="outline"
-                className="px-6 py-2 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 text-xs font-black tracking-widest uppercase"
-              >
-                <Icons.Wrench /> Auto-Fix
+              <Button onClick={handleAutoFix} isLoading={isFixing} variant="outline" className="text-[10px] font-black px-6 py-3 tracking-widest hover:border-emerald-500/50 hover:text-emerald-400 transition-all">
+                <Icons.Wrench /> AUTO-OPTIMIZE
               </Button>
-              <Button onClick={handleDownloadZip} variant="primary" className="px-8 py-3 rounded-2xl font-black text-xs tracking-widest">SHIP APP</Button>
+              <Button onClick={handleDownloadZip} className="px-8 py-3 text-[10px] font-black tracking-widest hover:shadow-cyan-500/40">
+                SHIP PACKAGE
+              </Button>
             </div>
-          </nav>
+          </header>
           
           <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 flex flex-col overflow-hidden p-6 gap-6">
-              <div className="flex items-center gap-2 bg-black/60 p-1.5 w-fit rounded-2xl border border-white/5">
-                <button onClick={() => setActiveTab('preview')} className={`px-8 py-2 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'preview' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Live App</button>
-                <button onClick={() => setActiveTab('code')} className={`px-8 py-2 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'code' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Code</button>
+            <div className="flex-1 flex flex-col overflow-hidden p-8 gap-8">
+              <div className="flex items-center gap-2 p-1.5 glass-panel w-fit rounded-2xl">
+                <button 
+                  onClick={() => setActiveTab('preview')} 
+                  className={`px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:translate-y-[-1px] ${activeTab === 'preview' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                >
+                  Live Render
+                </button>
+                <button 
+                  onClick={() => setActiveTab('code')} 
+                  className={`px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:translate-y-[-1px] ${activeTab === 'code' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                >
+                  Source Code
+                </button>
               </div>
               
-              <div className={`flex-1 relative bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl transition-all ${highlighting ? 'ring-2 ring-emerald-500/50 scale-[0.99]' : ''}`}>
+              <div className={`flex-1 relative glass-panel rounded-[2.5rem] overflow-hidden shadow-2xl border-white/5 transition-all duration-700 hover:border-white/20 ${highlighting ? 'ring-4 ring-cyan-500/40 scale-[0.995]' : ''}`}>
                 {activeTab === 'code' ? (
-                  <textarea readOnly value={state.currentSite?.code} className="w-full h-full bg-transparent p-10 text-emerald-400 code-font text-sm leading-relaxed resize-none focus:outline-none custom-scrollbar" />
+                  <textarea 
+                    readOnly 
+                    value={state.currentSite?.code} 
+                    className="w-full h-full bg-[#020617]/40 p-12 text-cyan-300/80 code-font text-sm leading-relaxed resize-none focus:outline-none custom-scrollbar transition-all selection:bg-cyan-500/50" 
+                  />
                 ) : (
                   <iframe srcDoc={state.currentSite?.code} className="w-full h-full border-none bg-white" title="Preview" />
                 )}
-                {state.isLoading && (
-                  <LoadingOverlay estimatedSeconds={estimatedTime} />
-                )}
+                {state.isLoading && <LoadingOverlay estimatedSeconds={estimatedTime} />}
               </div>
             </div>
 
-            <aside className="w-96 border-l border-white/5 bg-black/80 backdrop-blur-3xl p-8 flex flex-col gap-10 shrink-0 overflow-y-auto custom-scrollbar">
-              <div className="space-y-6">
-                <h3 className="text-white font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-3">
-                  <Icons.Sparkles /> Intelligence Refine
-                </h3>
-                <textarea
-                  value={editPrompt}
-                  onChange={(e) => setEditPrompt(e.target.value)}
-                  placeholder="Ask for complex features..."
-                  className="w-full h-32 bg-black/60 border border-white/10 rounded-2xl p-6 text-white text-sm focus:ring-2 focus:ring-blue-500 resize-none transition-all placeholder-slate-700"
-                />
-                <Button onClick={handleEdit} isLoading={isEditing} className="w-full font-black py-5 rounded-2xl uppercase text-xs">Apply Reasoning</Button>
-                {editError && <p className="text-red-400 text-[10px] font-black uppercase">{editError}</p>}
-              </div>
-
-              {/* AI Coding Suggestions Section */}
-              <div className="space-y-6 pt-6 border-t border-white/5">
+            <aside className="w-[420px] glass-panel border-l border-white/5 p-10 flex flex-col gap-12 shrink-0 overflow-y-auto custom-scrollbar group/aside">
+              <section className="space-y-8 group/reasoning">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-blue-400 font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-3">
-                    <Icons.Lightbulb /> AI Insights
+                  <h3 className="text-white font-black uppercase tracking-[0.2em] text-[11px] flex items-center gap-3 transition-transform group-hover/reasoning:translate-x-1">
+                    <Icons.Sparkles /> Reasoning Core
                   </h3>
-                  {isFetchingSuggestions && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
+                  <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse group-hover/reasoning:scale-150 transition-transform" />
                 </div>
-                <div className="space-y-3">
-                  {suggestions.length > 0 ? suggestions.map((s, i) => (
-                    <div key={i} className="group p-4 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-[11px] leading-relaxed transition-all hover:bg-white/10 hover:border-blue-500/30">
-                      <div className="flex items-start gap-3">
-                        <span className="text-blue-500 font-black mt-0.5">#0{i+1}</span>
-                        <span>{s}</span>
+                <div className="space-y-4">
+                  <textarea
+                    value={editPrompt}
+                    onChange={(e) => setEditPrompt(e.target.value)}
+                    placeholder="Refine interface logic..."
+                    className="w-full h-36 bg-black/40 border border-white/10 rounded-2xl p-6 text-white text-sm focus:ring-2 focus:ring-cyan-500/50 resize-none transition-all placeholder-slate-800 hover:border-white/20"
+                  />
+                  <Button onClick={handleEdit} isLoading={isEditing} className="w-full font-black py-5 text-[10px] tracking-widest uppercase italic active:scale-95">
+                    Push Refinement
+                  </Button>
+                </div>
+              </section>
+
+              <section className="space-y-6 pt-10 border-t border-white/5">
+                <h3 className="text-cyan-400 font-black uppercase tracking-[0.2em] text-[11px] flex items-center gap-3">
+                  <Icons.Lightbulb /> Heuristic Insights
+                </h3>
+                <div className="space-y-4">
+                  {isFetchingSuggestions ? (
+                    <div className="space-y-4">
+                      {[1,2,3].map(i => <div key={i} className="h-16 w-full bg-white/5 rounded-2xl animate-pulse" />)}
+                    </div>
+                  ) : suggestions.length > 0 ? suggestions.map((s, i) => (
+                    <div key={i} className="group p-5 rounded-2xl bg-white/5 border border-white/5 text-indigo-100/70 text-[11px] leading-relaxed transition-all hover:bg-white/10 hover:-translate-y-1 hover:border-cyan-500/20 hover:shadow-glow-cyan">
+                      <div className="flex items-start gap-4">
+                        <span className="text-cyan-500 font-black tabular-nums transition-transform group-hover:scale-125">0{i+1}</span>
+                        <span className="group-hover:text-white transition-colors">{s}</span>
                       </div>
                     </div>
                   )) : (
-                    <p className="text-slate-600 text-[10px] font-medium italic">Analyzing code for optimizations...</p>
+                    <p className="text-slate-700 text-[10px] italic">No active insights.</p>
                   )}
                 </div>
-              </div>
+              </section>
               
-              <div className="flex-1 border-t border-white/5 pt-10 flex flex-col">
-                <h3 className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-6">Chat Assistant</h3>
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar max-h-64">
+              <section className="flex-1 flex flex-col pt-10 border-t border-white/5 min-h-[300px]">
+                <h3 className="text-slate-500 font-black uppercase tracking-[0.2em] text-[11px] mb-8">Neural Chat</h3>
+                <div className="flex-1 overflow-y-auto space-y-5 mb-6 pr-4 custom-scrollbar">
                   {chatHistory.map((msg, i) => (
-                    <div key={i} className={`p-4 rounded-2xl text-[11px] leading-relaxed ${msg.role === 'user' ? 'bg-blue-600/10 border border-blue-500/20 text-blue-200 ml-4' : 'bg-white/5 border border-white/10 text-slate-300 mr-4 shadow-sm'}`}>
+                    <div key={i} className={`p-5 rounded-3xl text-[11px] leading-relaxed border transition-all hover:brightness-110 ${msg.role === 'user' ? 'bg-indigo-600/10 border-indigo-500/20 text-indigo-100 ml-8 hover:bg-indigo-600/20' : 'bg-white/5 border-white/10 text-slate-400 mr-8 shadow-inner hover:bg-white/10'}`}>
                       {msg.parts[0].text}
                     </div>
                   ))}
-                  {chatHistory.length === 0 && (
-                    <p className="text-slate-600 text-[10px] font-medium italic text-center">Ask for technical advice or documentation.</p>
-                  )}
                 </div>
-                <div className="relative">
-                  <input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleChat()}
-                    placeholder="Ask AI anything..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-[11px] text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-700"
-                  />
-                  <button onClick={handleChat} className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-500 hover:text-white transition-colors"><Icons.Magic /></button>
+                <div className="relative group/chat">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl blur opacity-20 group-focus-within/chat:opacity-50 transition duration-500" />
+                  <div className="relative">
+                    <input
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleChat()}
+                      placeholder="Discuss technical logic..."
+                      className="w-full bg-slate-900 border border-white/10 rounded-2xl px-6 py-5 text-[11px] text-white focus:outline-none transition-all placeholder-slate-700 focus:border-cyan-500/50 hover:border-white/20"
+                    />
+                    <button onClick={handleChat} className="absolute right-5 top-1/2 -translate-y-1/2 text-cyan-500 hover:text-white transition-all hover:scale-125 hover:rotate-12">
+                      <Icons.Magic />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </section>
             </aside>
           </div>
         </div>
       )}
       
-      {/* Footer Details */}
       {view === 'home' && (
-        <footer className="mt-auto py-12 px-8 border-t border-white/5 bg-black/20 backdrop-blur-md">
-          <div className="max-w-5xl mx-auto flex flex-wrap justify-between items-center gap-8">
-            <div className="flex items-center gap-6">
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-black text-slate-600 tracking-widest">Built By</span>
-                <span className="text-white font-bold uppercase tracking-tight">GAGAN V</span>
+        <footer className="mt-auto py-16 px-10 glass-panel border-t border-white/5 relative z-10 hover:bg-black/40 transition-colors">
+          <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-12">
+            <div className="flex items-center gap-10">
+              <div className="flex flex-col group/arch transition-all hover:translate-x-1">
+                <span className="text-[10px] uppercase font-black text-indigo-400/40 tracking-[0.4em] mb-1 group-hover/arch:text-cyan-500/60 transition-colors">Architect</span>
+                <span className="text-white font-bold tracking-tighter text-lg transition-all group-hover/arch:tracking-normal group-hover/arch:text-glow">GAGAN V</span>
               </div>
-              <div className="w-px h-8 bg-white/10" />
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-black text-slate-600 tracking-widest">Contact</span>
-                <span className="text-slate-300 tabular-nums">6361314885</span>
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col group/terminal transition-all hover:translate-x-1">
+                <span className="text-[10px] uppercase font-black text-indigo-400/40 tracking-[0.4em] mb-1 group-hover/terminal:text-indigo-400/80 transition-colors">Terminal</span>
+                <span className="text-slate-400 font-mono text-sm tracking-widest hover:text-white transition-colors">+91 6361314885</span>
               </div>
             </div>
-            <div className="flex items-center gap-10">
-              <a href="mailto:Gagan00270@gmail.com" className="text-slate-500 hover:text-blue-400 transition-colors text-sm font-black uppercase tracking-widest">Gagan00270@gmail.com</a>
-              <a href="https://www.linkedin.com/in/gagan-v-b12936371" target="_blank" className="p-3 rounded-full bg-white/5 border border-white/10 hover:bg-blue-600/20 hover:border-blue-500/50 transition-all">
-                <svg className="w-5 h-5 fill-current text-white" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-              </a>
+            
+            <div className="flex items-center gap-12">
+              <a href="mailto:Gagan00270@gmail.com" className="text-slate-500 hover:text-cyan-400 transition-all text-xs font-black uppercase tracking-[0.3em] hover:scale-105">Gagan00270@gmail.com</a>
+              <div className="flex items-center gap-4">
+                 <a href="https://www.linkedin.com/in/gagan-v-b12936371" target="_blank" className="w-12 h-12 flex items-center justify-center rounded-2xl glass-panel hover:bg-indigo-600 hover:border-indigo-500 hover:scale-110 active:scale-90 transition-all text-white group shadow-lg">
+                  <svg className="w-5 h-5 fill-current transition-transform group-hover:rotate-[360deg] duration-700" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </a>
+              </div>
             </div>
           </div>
         </footer>

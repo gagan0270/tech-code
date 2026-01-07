@@ -2,13 +2,13 @@
 import React from 'react';
 
 const messages = [
-  "Dreaming up your layout...",
-  "Choosing the perfect color palette...",
-  "Writing semantic HTML...",
-  "Applying Tailwind utility classes...",
-  "Optimizing for mobile devices...",
-  "Polishing animations...",
-  "Adding professional touch..."
+  "Mapping Neural Architecture...",
+  "Synthesizing Visual Logic...",
+  "Compiling Design Systems...",
+  "Forging Ethereal Layouts...",
+  "Injecting Responsive DNA...",
+  "Polishing Interactive Surface...",
+  "Manifesting Creative Vision..."
 ];
 
 interface LoadingOverlayProps {
@@ -23,7 +23,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ estimatedSeconds
   React.useEffect(() => {
     const msgInterval = setInterval(() => {
       setMsgIndex((prev) => (prev + 1) % messages.length);
-    }, 3000);
+    }, 2500);
 
     const startTime = Date.now();
     const endTime = startTime + estimatedSeconds * 1000;
@@ -33,10 +33,10 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ estimatedSeconds
       const diff = endTime - now;
       const elapsed = now - startTime;
       
-      const currentProgress = Math.min(95, (elapsed / (estimatedSeconds * 1000)) * 100);
+      const currentProgress = Math.min(98, (elapsed / (estimatedSeconds * 1000)) * 100);
       setProgress(currentProgress);
       setRemaining(Math.max(0, Math.ceil(diff / 1000)));
-    }, 100);
+    }, 50);
 
     return () => {
       clearInterval(msgInterval);
@@ -45,29 +45,59 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ estimatedSeconds
   }, [estimatedSeconds]);
 
   return (
-    <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[100] flex flex-col items-center justify-center p-6 text-center">
-      <div className="relative w-32 h-32 mb-10">
-        <div className="absolute inset-0 border-4 border-blue-500/10 rounded-full"></div>
-        <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <div className="absolute inset-4 bg-blue-500/5 rounded-full flex items-center justify-center">
-           <svg className="w-12 h-12 text-blue-400 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-        </div>
+    <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center p-8 overflow-hidden">
+      {/* Background Neural Sparks */}
+      <div className="absolute inset-0 opacity-30">
+        {[...Array(20)].map((_, i) => (
+          <div 
+            key={i}
+            className="absolute bg-blue-500 rounded-full blur-xl animate-pulse"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 200 + 50}px`,
+              height: `${Math.random() * 200 + 50}px`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${Math.random() * 10 + 5}s`,
+            }}
+          />
+        ))}
       </div>
 
-      <div className="space-y-4 max-w-md w-full">
-        <h2 className="text-3xl font-black text-white tracking-tight uppercase italic italic-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">Synthesizing Core</h2>
-        <p className="text-slate-400 font-medium h-6">{messages[msgIndex]}</p>
-        
-        <div className="pt-8 space-y-3">
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-            <span>Progressive Build</span>
-            <span>Est. {remaining}s Remaining</span>
+      <div className="relative z-10 flex flex-col items-center max-w-lg w-full">
+        {/* Central Core */}
+        <div className="relative w-48 h-48 mb-16">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 animate-spin-slow blur-xl opacity-50" />
+          <div className="absolute inset-0 rounded-full border border-white/20 animate-spin-slow" />
+          <div className="absolute inset-2 rounded-full border border-white/10 animate-[spin_12s_linear_infinite_reverse]" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-white text-3xl font-black italic tracking-tighter drop-shadow-2xl">
+              {Math.round(progress)}%
+            </div>
           </div>
-          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-linear shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-              style={{ width: `${progress}%` }}
-            />
+        </div>
+
+        <div className="space-y-8 w-full text-center">
+          <div className="space-y-2">
+            <h2 className="text-4xl font-extrabold text-white tracking-tighter italic uppercase bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
+              TechCode AI
+            </h2>
+            <p className="text-indigo-200/60 font-medium tracking-widest text-xs uppercase animate-pulse">
+              {messages[msgIndex]}
+            </p>
+          </div>
+          
+          <div className="space-y-3 px-4">
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 transition-all duration-300 ease-out shadow-[0_0_20px_rgba(6,182,212,0.6)] rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-400/50">
+              <span>Initializing Logic</span>
+              <span>{remaining}s Est.</span>
+            </div>
           </div>
         </div>
       </div>

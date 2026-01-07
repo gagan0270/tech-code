@@ -15,6 +15,12 @@ const SYSTEM_INSTRUCTION = `
   - ACCESSIBILITY: Strict WCAG AA compliance (Semantic HTML, WAI-ARIA, Keyboard nav).
   - FAVICON: You MUST include a <link rel="icon"> with a high-quality, relevant data:image/svg+xml SVG favicon based on the application's theme.
 
+  PERFORMANCE & AESTHETICS REQUIREMENTS (MANDATORY):
+  1. SOPHISTICATED LOADING: For any dynamic content, simulated data loading, or media assets, implement skeleton screens and shimmering placeholders. Perceived performance must be exceptional with smooth transitions from skeleton to content.
+  2. DEEP PARALLAX: Implement pronounced parallax scrolling effects. Background decorative elements and hero images MUST move at a significantly slower pace than foreground content (text/cards), creating a clear and immersive sense of 3D depth. The background movement should be easily visible but smooth.
+  3. ANIMATED HERO: The Hero section background MUST include a subtle, high-end animated effect. This could be a gentle CSS wave animation, a slow-drifting multi-point mesh gradient, or floating ethereal particles.
+  4. MOTION DESIGN: Use staggered entrance animations (e.g., slide-up-fade) for sections and cards. Ensure all buttons and interactive elements have polished hover and active states.
+
   OUTPUT:
   - Return ONLY raw HTML code. Do NOT wrap in markdown backticks.
 `;
